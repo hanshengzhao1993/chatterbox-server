@@ -11,8 +11,9 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
-
+// module.export = function (request, response) {
 var requestHandler = function(request, response) {
+  var data = [];
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -27,23 +28,71 @@ var requestHandler = function(request, response) {
   // Adding more logging to your server can be an easy way to get passive
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
-  console.log('Serving request type ' + request.method + ' for url ' + request.url);
+  // console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
   // The outgoing status.
-  var statusCode = 200;
-
-  // See the note below about CORS headers.
+  var defaultCorsHeaders = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'access-control-allow-headers': 'content-type, accept',
+    'access-control-max-age': 10 // Seconds.
+  };
   var headers = defaultCorsHeaders;
+  headers['Content-Type'] = 'text/plain';
+
+  var urlName = '/classes/messages';
+  var statusCode = 200;
+  if (request.method === 'GET') {
+    statusCode = 200; 
+    if ( request.url === urlName ) {
+      console.log(' GET Serving request type ' + request.method + ' for url ' + request.url);
+      // response.write();
+      response.writeHead(statusCode, headers);
+      response.write(JSON.stringify({results: data }));
+      response.end();
+    } else {
+      statusCode = 404;
+      response.writeHead(statusCode, headers);
+      response.write(JSON.stringify({results: data }));
+      response.end();
+    }
+
+  } else if (request.method === 'POST' && request.url === urlName) {
+    console.log('POST Serving request type ' + request.method + ' for url ' + request.url);
+
+    statusCode = 201;
+
+    request.on('data', function(dataItem) {
+      // console.log('dataitem: ', (JSON.parse(dataItem)).username)
+      data.push(JSON.parse(dataItem));
+      console.log(data[0].username);
+    });
+    response.writeHead(statusCode, headers);
+    response.write(JSON.stringify({results: data }));
+    response.end();
+    // response.write(JSON.stringify({results: data }));
+
+  } else if ( request.method === 'PUT') {
+  console.log(' PUT Serving request type ' + request.method + ' for url ' + request.url);
+
+
+  } else if ( request.method === 'DELETE') {
+
+  } else if ( request.method === 'OPTIONS') {
+
+  }
+  // See the note below about CORS headers.
+
+  // response-- sending information back to client
+  // request-- contains information containsing clients request
 
   // Tell the client we are sending them plain text.
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'text/plain';
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
@@ -52,7 +101,9 @@ var requestHandler = function(request, response) {
   //
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end('Hello, World!');
+  // response.writeHead(statusCode, headers);
+  // response.write(JSON.stringify({results: data }));
+  // response.end();
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
@@ -70,4 +121,6 @@ var defaultCorsHeaders = {
   'access-control-allow-headers': 'content-type, accept',
   'access-control-max-age': 10 // Seconds.
 };
+
+module.exports.requestHandler = requestHandler;
 
